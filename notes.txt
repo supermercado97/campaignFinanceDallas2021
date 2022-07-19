@@ -1,0 +1,146 @@
+"""
+suspicious properties
+https://montgomerystreetpartners.com/contact/ - 75219 donated to many campaigns
+3953 Maple ave
+lamont also owns
+https://opencorporates.com/companies/us_tx/0059618000
+https://www.fastpeoplesearch.com/max-lamont_id_G7459552138962769448
+
+
+doug deason
+https://twitter.com/dougdeason
+3953 Maple ave
+son of https://en.wikipedia.org/wiki/Darwin_Deason - billionare
+
+
+https://www.sos.state.tx.us/corp/managementinfofaqs.shtml#mgmt7
+SoS doesn't keep track of LLC ownership
+https://www.ethics.state.tx.us/resources/FAQs/2020election_faqs.php#Q11
+says LLC with corp owner can't make contributions
+
+
+https://opencorporates.com/companies/us_tx/0800936298
+LPC Retail LLC
+PO Box 1920 - Donations made by the POUGE family
+Dallas, TX 75221 8000.0 4 2
+owned by a corporation: C T Corporation System
+https://opencorporates.com/companies/us_tx/0001410606
+this is apparently not allowed by state ethics commission
+CT Corporation Systems has a president named john weber - whose wife angela and he have donated A LOT of money in this campaign
+delores pouge - https://www.spokeo.com/Jean-Pogue/Texas/Dallas/p269654771
+mack pouge - former partner of trammel crow
+
+these are the families that run dallas.^
+
+for po box 117540
+owned by james tatum
+gandolf15**@aol.com
+might have affiliations with amy jean espaza - https://www.truepeoplesearch.com/find/person/p9lr9nr2n4rn02l9n9un
+according to https://www.locatepeople.org/james-tatum/
+james should have had this PO for 15+ years
+
+
+!!!!!!!look at harlan crow, son of trammel crow, whose company by his namesake is affiliated to Don WILLIAMS (8604 greenville ave)!!!!!
+
+po box 17428 affiliated with this company - https://opencorporates.com/companies/us_tx/0163725500
+robert haass
+richard c haass
+also affiliated with https://profiles.superlawyers.com/texas/austin/lawfirm/linebarger-goggan-blair-and-sampson-llp/fb9e6c94-ca36-4a63-aca0-ef39cbd911bd.html
+    -MADRID MCLAUGHLIN POST 10354 VETERANS OF FOREIGN WARS
+also affiliated with https://opencorporates.com/companies/us_tx/0030444001
+    -MADRID MCLAUGHLIN POST 10354 VETERANS OF FOREIGN WARS 
+
+po box 803447
+https://opencorporates.com/companies/us_tx?action=search_companies&branch=&commit=Go&controller=searches&inactive=false&mode=best_fields&nonprofit=&order=&q=PO+Box+803447&search_fields%5B%5D=name&search_fields%5B%5D=previous_names&search_fields%5B%5D=company_number&search_fields%5B%5D=other_company_numbers&search_fields%5B%5D=registered_address_in_full&utf8=%E2%9C%93
+
+half of the top contributing addresses come from Park Cities Zip Codes
+
+Looking closer than just zipcodes, we find that there are several addresses that not only donate in the highest bracket of campaign contributions, but also have several names associated.
+
+Analysis shows that ther can be multiple donations under the same last name, but that are offered under different first names. This alone wouldn't be cause for alarm, but amidst these we find additional layers of obscurity among the highest campaign contributions.
+
+Among PO Boxes, it's difficult to identify with any particular owner, but the amount donated sits well above the top 75% of contributions. Without the ability to identify which individual is associated with these contributions, we'll resort to analyzing the affiliated businesses.
+
+As we have done with the majority of addresses, we're looking at the owners of these properties to identify the individuals responsible for funding these campaigns.
+
+Further, since 10/20 of the top contributing addresses reside outside of Dallas City Council Districts, it's worth noting that the two candidates who received the highest amounts of out of state contributinons also received the greatest amount of out-of-district contributions
+
+Chad West and Jaynie Schultz received $99,123 and $82,030 respectively. In other words, 34% of Chad West's campaign and 30% of Jaynie Schultz' campaign contributions came from out-of-district donors.
+
+use quartiles to map how much in district vs out of district in each segment
+
+
+new questions:
+1. what percent of winning campaigns received donations from park cities
+2. are the total contributions getting calculated correctly 
+3. can we build a zipcode map by contributions
+4. can we get a list of the following:
+    - names of individuals/businesses making out-of-state donations (to who and how much)
+    - names of individuals/businesses makign out-of-district donations (to who and how much)
+    - names of individuals trying to hide their donations amounts
+        - using aliases - same address, same last name
+        - using the names of others in their household - same address, same last name
+5. look into creating an alias dict to clean shit up.
+
+BART BEVERS - Dallas Inspector General Office
+ext 6704880
+hiring qualifications
+- ex fraud investigator background
+- ex police investigator background
+
+Dallas Campaign Finance Contributions Code Violations
+0. $5,000 cap on contributions to mayoral races
+1. 15A-2 individuals and certain businesses may not make more than $1000 in donations to a single candidate
+2. 15A-5 Use of legal name
+3. donations from out-of-state commitees totalling more than $500 must report all donors who gave more than  $100 to the out-of-state committee in the last 12 months
+** (b)  This section does not apply to a contribution from an out-of-state political committee if the committee appointed a campaign treasurer under Chapter 252 before the contribution was made and is subject to the reporting requirements of Chapter 254.**
+
+
+"""
+
+Look at out-of-state contributions per council-member
+Look at avg donations per council-member
+
+total contributions to successful campaigns (including mayor) - 2,075,754
+excluding mayor - $1,800,860
+
+total out of dallas contributions (incl mayor) - $819,959
+excl mayor - $690,591
+Suggested Features
+- Determine the number of unique contributors to a campaign
+- Total loans to each candidate
+- How many candidates lost and were outspent
+- look through the city council meetings for instances where people who donated later showed up in the agendas
+    - initial search via appointees list
+    - search for addresses referenced in city minutes
+- Look into applying for or suggesting one of our mutual aid friends apply for a board position
+    - Community Development Commission ***fund community programs babyyyy***
+        resendez
+    - Citizen Homelessness Commission (CHC)  ***literally anybody in our spaces***
+        resendez
+        blewett
+    - Community Police Oversight Board ***ideal for the folks with white privilege ***
+    - Dallas Area Partnership To End And Prevent Homelessness Local Government Corporation
+        fake ass corporation requires real estate, philanthropic, housing authority, and VA reps
+    - Environmental Commission ***underlooked position with possibility for major plays***
+        thomas
+        arnold
+        atkins
+        mcgough
+    - Ethics Advisory Commission ***interesting option***
+        no vacancies.
+        ***note that pam gerber donated a total of $3,350 to councilmembers and lives in park cities***
+    - Housing Finance Corporation *** many vacancies***
+        moreno
+        resendez
+        bazaldua
+    - Martin Luther King Jr Community Center Board *** direct area of impact concerning SWC work***
+        arnold
+        bazaldua
+        atkins
+Interesting Findings:
+Only 2/14 Councilmembers took out loans to fund their campaign. Many of their competitors DID take out loans.
+Mean > Median in all cases of campaign contributions for councilmembers
+Tennel Atkins had the fewest small-donation contributions
+7/14 Councilmembers had 25% of contributions being over $1000
+Jaynie Schultz and Chad West spent the most on their campaigns among elected councilmembers.
