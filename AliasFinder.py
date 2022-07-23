@@ -50,7 +50,6 @@ def isCouple(name):
     return ("&" in name) or ('AND' in name)
 
 aliases = {}
-household = {}
 for address in uniqueAddresses:
     addyDF = financeDF[financeDF["Street "] == address]
 
@@ -97,16 +96,6 @@ for address in uniqueAddresses:
                         existingAliases = {name}
                     existingAliases.add(checkName)
                     aliases[name] = existingAliases
-                else:
-                    # last names match but first names don't
-                    if(not isKnownAlias(name, household)):
-                        existingHousehold = set()
-                        if name in household.keys():
-                            existingHousehold = household[name]
-                        else:
-                            existingHousehold = {name}
-                        existingHousehold.add(checkName)
-                        household[name] = existingHousehold
 
 formattedAliases = dict.fromkeys(aliases.keys())
 print("****aliases***")
@@ -119,20 +108,15 @@ for primaryName in aliases.keys():
 with open(aliasFile, "w") as outfile:
     json.dump(formattedAliases, outfile)
 
-print("****households***")
-for householdKey in household.keys():
-    print("shared household: " + householdKey)
-    for shared in household[householdKey]:
-        print(shared)
-
 
 """
-Retry the household bullshit but this time with an emphasis on straw donor identification
+Household analysis with emphasis on straw donor identification
 
 in scope:
 all individuals at the address with unique names
 include married couple donations
 
+out of scope:
 eventually we'll take last names into account
 """
 
