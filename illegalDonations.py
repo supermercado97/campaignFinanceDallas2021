@@ -10,9 +10,10 @@ resolved bugs
     -- this is bc she doesn't have an alias.
     -- we'll need to analyze everybody who doesn't have an alias
 
-unresolved bugs
+unresolved tasks
+-
 
-next steps:
+resolved tasks
 1. look at how much each alias donated to each candidate
 2. If the total contributions exceeds alotted amount ($5000 for mayor, $1000 for council member) write to document
     - name of donor
@@ -22,12 +23,6 @@ next steps:
 3. write aliases to a doc in a different file
 4. load the aliases from a doc in this file
 5. Look at household donations to search for straw donations
-6. Get a list of the non-llc business names and manually research them
-    - ex: metro tex assoc donated a lot to the campaigns of council-members
-        - carolyn king arnold documented $4,000 but they gave $5,000
-    source:
-        - https://www.transparencyusa.org/tx/pac/metrotex-association-of-realtors-political-action-committee-metrotex-pac-15663-gpac/payees
-7. if a person exists in two shared household buckets, we should merge the buckets
 
 """
 from prettytable import PrettyTable
@@ -35,18 +30,20 @@ from statistics import mean, multimode, quantiles
 import pandas as pd
 import sys, numpy, spacy, json
 
+# define external library parameters
 numpy.set_printoptions(threshold=sys.maxsize)
 nlp = spacy.load("en_core_web_lg")
 pd.options.display.max_columns = None
 
+# set variable defs and output files
 aliasFile = 'DonorAliases.json'
 contributorsDoc = "Campaign_Finance (2).xlsx"
-SEMANTIC_SIM_THRESHOLD = 0.73
 mayor = 'Eric Johnson'
-councilMembers = ['Eric Johnson', 'Chad West', "Jesus Moreno", "Casey Thomas", "Carolyn KIng Arnold", "Carolyn Arnold", "carolyn arnold", "Jaime Resendez", "Omar Narvaez", "Adam Bazaldua", "Tennell Atkins", "Paula Blackmon", "Byron McGough", "Jaynie Schultz", "Cara Mendelsohn", "Gay Willis", "Paul Ridley"]
 maxDonationMayor = 5000
 maxDonationCouncil = 1000
+SEMANTIC_SIM_THRESHOLD = 0.73
 
+# open files and load data
 illegalDoc = open("IllegalActions.txt","w")
 financeDF = pd.read_excel(contributorsDoc)
 contributorDF = financeDF.loc[(financeDF['Contact Type'] == "Contributor")]
@@ -69,12 +66,23 @@ def maxDonation(candidate):
         return maxDonationMayor
     return maxDonationCouncil
 
+def isCouple(name):
+    return ("&" in name) or ('AND' in name)
+
+# header in output file
 illegalDoc.write("********* Donations from Aliases and Married Couples *********")
+
 # begin alias contribution analysis
 allUniqueCandidates = set(contributorDF["Candidate Name"].unique().tolist())
+
+"""
+
+primaryName - defined as legal name, not an alias (key in alias dict)
+"""
 for primaryName in aliases.keys():
     primaryNameContributions = dict.fromkeys(allUniqueCandidates, 0)
     aliasDonationsToCandidate = dict.fromkeys(aliases[primaryName], {})
+
     for alias in aliases[primaryName]:
         totalAliasContributionsToCandidate = 0
         if("&" in alias or "AND" in alias):
@@ -96,7 +104,7 @@ for primaryName in aliases.keys():
             tempDict[candidate] = totalAliasContributionsToCandidate
         aliasDonationsToCandidate[alias] = tempDict
 
-    # look for illegal donations
+    # look for illegal donations - donations above campaign contribution limits
     for candidate in primaryNameContributions.keys():
         if(primaryNameContributions[candidate] > maxDonation(candidate)):
             sharedName = "".join(s for s in aliases[primaryName] if "AND" in s)
@@ -120,10 +128,8 @@ for primaryName in aliases.keys():
                 print(primaryName + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]))
                 illegalDoc.write(primaryName + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]) + "\n")
 
-def isCouple(name):
-    return ("&" in name) or ('AND' in name)
 
-# let's take a look at donors who are not using aliases. This will include duplicates
+# let's take a look at donors who are not using aliases
 # this does not include donations from businesses
 illegalDoc.write("********* Donations from Individuals (no aliases used) *********\n")
 uniqueNames = set(contributorDF['Upper Combined Names'].unique().tolist())
