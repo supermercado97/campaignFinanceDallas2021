@@ -1,4 +1,9 @@
 """
+Author: Isaiah Mercado
+Scope:
+    - From an excel file with names, addresses, and campaign contributions
+        - determine which aliases a donor is using {illegal use of aliases in donations}
+        - determine who is making contributions from the same address {straw donors}
 
 notes:
 the walne family at 10020 caribou also has an address at 120 reflex dr
@@ -16,10 +21,12 @@ householdFile = 'SharedAddresses.json'
 contributorsDoc = "Campaign_Finance (2).xlsx"
 SEMANTIC_SIM_THRESHOLD = 0.73
 
+# Define external library parameters
 numpy.set_printoptions(threshold=sys.maxsize)
 nlp = spacy.load("en_core_web_lg")
 pd.options.display.max_columns = None
 
+# load from files
 financeDF = pd.read_excel(contributorsDoc)
 contributorDF = financeDF.loc[(financeDF['Contact Type'] == "Contributor")]
 uniqueAddresses = set(financeDF["Street "].unique().tolist())
@@ -39,42 +46,50 @@ def isKnownAlias(name, aliases):
             return True
     return False
 
+def isCouple(name):
+    return ("&" in name) or ('AND' in name)
+
 aliases = {}
 household = {}
 for address in uniqueAddresses:
     addyDF = financeDF[financeDF["Street "] == address]
 
-    # 3. all contributions at an address to any council member/mayor
+    # find all contributions at an address to any council member/mayor
     uniqueCandidatesAtAddress = set(addyDF["Candidate Name"].unique().tolist())
     contributionsToCandidatesAtAddress = dict.fromkeys(uniqueCandidatesAtAddress, 0)
     for candidate in uniqueCandidatesAtAddress:
         contributionsToCandidatesAtAddress[candidate] += round(sum(addyDF[addyDF["Candidate Name"] == candidate].Amount.values.tolist()),2)
-        #suspiciousDoc.write(address + " donated $" + contributionsToCandidatesAtAddress[candidate] + " to " + candidate)
 
     # 2. all contributions at an address where the first and last names match
     uniqueNamesAtAddress = set(addyDF['Upper Combined Names'].unique().tolist())
     for name in uniqueNamesAtAddress:
-        if (name == " " or isKnownAlias(name, aliases) or "AND" in name or "&" in name):
+        # skip known aliases, empty strings, and couples
+        if (name == " " or isKnownAlias(name, aliases) or isCouple(name)):
             continue
+
+        # remove suffix from name and extract last name
         if ("III" in name or "II" in name or "1" in name or "2" in name):
             lastName = name.split(" ")[-2]
         else:
             lastName = name.split(" ")[-1]
+
         # semantic analysis
         for checkName in uniqueNamesAtAddress:
+            # do not compare identical names
             if (name == checkName):
                 continue
-            splitName = checkName.split(" ")
+            # remove suffix and extract last name to check against
             if ("III" in checkName or "II" in checkName or "1" in checkName or "2" in checkName):
                 checkLastName = checkName.split(" ")[-2]
             else:
                 checkLastName = checkName.split(" ")[-1]
+            # Semantic check of last name
             if semanticNameCheck(lastName, checkLastName, SEMANTIC_SIM_THRESHOLD):
-                # now let's check the first names
                 firstName = name.split(" ")[0]
                 firstCheckName = checkName.split(" ")[0]
+                # semantic check of first name
                 if semanticNameCheck(firstName, firstCheckName, SEMANTIC_SIM_THRESHOLD):
-                    # we have an alias
+                    # first and last names are semantically similar
                     existingAliases = set()
                     if name in aliases.keys():
                         existingAliases = aliases[name]
@@ -83,6 +98,7 @@ for address in uniqueAddresses:
                     existingAliases.add(checkName)
                     aliases[name] = existingAliases
                 else:
+                    # last names match but first names don't
                     if(not isKnownAlias(name, household)):
                         existingHousehold = set()
                         if name in household.keys():
