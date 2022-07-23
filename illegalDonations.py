@@ -1,9 +1,17 @@
 """
+rulebook:
+https://codelibrary.amlegal.com/codes/dallas/latest/dallas_tx/0-0-0-6263
 
-bugs
+resolved bugs
 - timothy byrne is missing from aliases but is found in shared household
 - rita sue gold doesn't find rita gold as alias
 - tim and melanie byrne donation to cara mendelson not found
+- nancy best donated $2000 to bazaldua but didn't get picked up by the software
+    -- this is bc she doesn't have an alias.
+    -- we'll need to analyze everybody who doesn't have an alias
+
+unresolved bugs
+
 next steps:
 1. look at how much each alias donated to each candidate
 2. If the total contributions exceeds alotted amount ($5000 for mayor, $1000 for council member) write to document
@@ -13,39 +21,41 @@ next steps:
     - total contribution to the council member
 3. write aliases to a doc in a different file
 4. load the aliases from a doc in this file
+5. Look at household donations to search for straw donations
+6. Get a list of the non-llc business names and manually research them
+    - ex: metro tex assoc donated a lot to the campaigns of council-members
+        - carolyn king arnold documented $4,000 but they gave $5,000
+    source:
+        - https://www.transparencyusa.org/tx/pac/metrotex-association-of-realtors-political-action-committee-metrotex-pac-15663-gpac/payees
+7. if a person exists in two shared household buckets, we should merge the buckets
+
 """
 from prettytable import PrettyTable
 from statistics import mean, multimode, quantiles
 import pandas as pd
-import sys, numpy, spacy
+import sys, numpy, spacy, json
 
 numpy.set_printoptions(threshold=sys.maxsize)
 nlp = spacy.load("en_core_web_lg")
 pd.options.display.max_columns = None
 
+aliasFile = 'DonorAliases.json'
 contributorsDoc = "Campaign_Finance (2).xlsx"
-financeDF = pd.read_excel(contributorsDoc)
-illegalDoc = open("IllegalActions.txt","w")
 SEMANTIC_SIM_THRESHOLD = 0.73
-
 mayor = 'Eric Johnson'
 councilMembers = ['Eric Johnson', 'Chad West', "Jesus Moreno", "Casey Thomas", "Carolyn KIng Arnold", "Carolyn Arnold", "carolyn arnold", "Jaime Resendez", "Omar Narvaez", "Adam Bazaldua", "Tennell Atkins", "Paula Blackmon", "Byron McGough", "Jaynie Schultz", "Cara Mendelsohn", "Gay Willis", "Paul Ridley"]
-
 maxDonationMayor = 5000
 maxDonationCouncil = 1000
 
+illegalDoc = open("IllegalActions.txt","w")
+financeDF = pd.read_excel(contributorsDoc)
 contributorDF = financeDF.loc[(financeDF['Contact Type'] == "Contributor")]
-
-
 uniqueAddresses = set(financeDF["Street "].unique().tolist())
 
-def semanticNameCheck(name1, name2, threshold):
-    name1_doc = nlp(name1)
-    name2_doc = nlp(name2)
-    sim = name1_doc.similarity(name2_doc)
-    if sim > threshold:
-        return True
-    return False
+# load aliases from file
+f = open(aliasFile)
+aliases = json.load(f)
+f.close()
 
 # let's make sure the 'name' isn't already an alias
 def isKnownAlias(name, aliases):
@@ -59,70 +69,7 @@ def maxDonation(candidate):
         return maxDonationMayor
     return maxDonationCouncil
 
-aliases = {}
-household = {}
-for address in uniqueAddresses:
-    addyDF = financeDF[financeDF["Street "] == address]
-
-    # 3. all contributions at an address to any council member/mayor
-    uniqueCandidatesAtAddress = set(addyDF["Candidate Name"].unique().tolist())
-    contributionsToCandidatesAtAddress = dict.fromkeys(uniqueCandidatesAtAddress, 0)
-    for candidate in uniqueCandidatesAtAddress:
-        contributionsToCandidatesAtAddress[candidate] += round(sum(addyDF[addyDF["Candidate Name"] == candidate].Amount.values.tolist()),2)
-        #suspiciousDoc.write(address + " donated $" + contributionsToCandidatesAtAddress[candidate] + " to " + candidate)
-
-    # 2. all contributions at an address where the first and last names match
-    uniqueNamesAtAddress = set(addyDF['Upper Combined Names'].unique().tolist())
-    for name in uniqueNamesAtAddress:
-        if (name == " " or isKnownAlias(name, aliases) or "AND" in name or "&" in name):
-            continue
-        if ("III" in name or "II" in name or "1" in name or "2" in name):
-            lastName = name.split(" ")[-2]
-        else:
-            lastName = name.split(" ")[-1]
-        # semantic analysis
-        for checkName in uniqueNamesAtAddress:
-            if (name == checkName):
-                continue
-            splitName = checkName.split(" ")
-            if ("III" in checkName or "II" in checkName or "1" in checkName or "2" in checkName):
-                checkLastName = checkName.split(" ")[-2]
-            else:
-                checkLastName = checkName.split(" ")[-1]
-            if semanticNameCheck(lastName, checkLastName, SEMANTIC_SIM_THRESHOLD):
-                # now let's check the first names
-                firstName = name.split(" ")[0]
-                firstCheckName = checkName.split(" ")[0]
-                if semanticNameCheck(firstName, firstCheckName, SEMANTIC_SIM_THRESHOLD):
-                    # we have an alias
-                    existingAliases = set()
-                    if name in aliases.keys():
-                        existingAliases = aliases[name]
-                    else:
-                        existingAliases = {name}
-                    existingAliases.add(checkName)
-                    aliases[name] = existingAliases
-                else:
-                    if(not isKnownAlias(name, household)):
-                        existingHousehold = set()
-                        if name in household.keys():
-                            existingHousehold = household[name]
-                        else:
-                            existingHousehold = {name}
-                        existingHousehold.add(checkName)
-                        household[name] = existingHousehold
-print("****aliases***")
-for aliasKey in aliases.keys():
-    print("for " + aliasKey)
-    for alias in aliases[aliasKey]:
-        print(alias)
-
-print("****households***")
-for householdKey in household.keys():
-    print("shared household: " + householdKey)
-    for shared in household[householdKey]:
-        print(shared)
-
+illegalDoc.write("********* Donations from Aliases and Married Couples *********")
 # begin alias contribution analysis
 allUniqueCandidates = set(contributorDF["Candidate Name"].unique().tolist())
 for primaryName in aliases.keys():
@@ -152,6 +99,9 @@ for primaryName in aliases.keys():
     # look for illegal donations
     for candidate in primaryNameContributions.keys():
         if(primaryNameContributions[candidate] > maxDonation(candidate)):
+            sharedName = "".join(s for s in aliases[primaryName] if "AND" in s)
+            if (not sharedName):
+                sharedName = "".join(s for s in aliases[primaryName] if "&" in s)
             print("**********")
             illegalDoc.write("**********\n")
             for alias in aliasDonationsToCandidate.keys():
@@ -160,18 +110,32 @@ for primaryName in aliases.keys():
                 if(candidate in tempAlias.keys()):
                     print(alias + "\t\t\t\t" + "$" + str(tempAlias[candidate]) + "\t\t\t\t" + candidate)
                     illegalDoc.write(alias + "\t\t\t\t" + "$" + str(aliasDonationsToCandidate[alias][candidate]) + "\t\t\t\t" + candidate + "\n")
-            sharedName = "".join(s for s in aliases[primaryName] if "AND" in s)
-            if (not sharedName):
-                sharedName = "".join(s for s in aliases[primaryName] if "&" in s)
+
 
             # replace below with writeFunc that takes in a name
             if (sharedName):
-                print(sharedName + " total contributions to " + candidate + " $" + str(primaryNameContributions[candidate]))
-                illegalDoc.write(sharedName + " total contributions to " + candidate + " $" + str(primaryNameContributions[candidate]) + "\n")
+                print(sharedName + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]))
+                illegalDoc.write(sharedName + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]) + "\n")
             else:
-                print(primaryName + " total contributions to " + candidate + " $" + str(primaryNameContributions[candidate]))
-                illegalDoc.write(primaryName + " total contributions to " + candidate + " $" + str(primaryNameContributions[candidate]) + "\n")
+                print(primaryName + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]))
+                illegalDoc.write(primaryName + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]) + "\n")
 
-# now do individual contribution analysis
-# we want to gather how much each individual donated to any candidate
+def isCouple(name):
+    return ("&" in name) or ('AND' in name)
+
+# let's take a look at donors who are not using aliases. This will include duplicates
+# this does not include donations from businesses
+illegalDoc.write("********* Donations from Individuals (no aliases used) *********\n")
+uniqueNames = set(contributorDF['Upper Combined Names'].unique().tolist())
+for name in uniqueNames:
+    if isKnownAlias(name, aliases) or name == " ":
+        continue
+    donorDF = contributorDF[contributorDF['Upper Combined Names'] == name]
+    for candidate in allUniqueCandidates:
+        donorContributionsToCandidate = sum(donorDF[donorDF['Candidate Name'] == candidate].Amount.values.tolist())
+        donationThreshold = maxDonation(candidate) if not isCouple(name) else 2*maxDonation(candidate)
+        if donorContributionsToCandidate > donationThreshold:
+            print(name + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(donorContributionsToCandidate))
+            illegalDoc.write(name + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(donorContributionsToCandidate) + "\n")
+
 illegalDoc.close()

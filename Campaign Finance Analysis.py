@@ -1,53 +1,11 @@
 """
 
-Look at out-of-state contributions per council-member
-Look at avg donations per council-member
+bugs:
+w vs west --- it's why we aren't catching the david spence phenomenon
+    - let's clean all the addresses( street vs st., e vs east, 8th vs eighth, etc)
 
-total contributions to successful campaigns (including mayor) - 2,075,754
-excluding mayor - $1,800,860
-
-total out of dallas contributions (incl mayor) - $819,959
-excl mayor - $690,591
-Suggested Features
-- Determine the number of unique contributors to a campaign
-- Total loans to each candidate
-- How many candidates lost and were outspent
-- look through the city council meetings for instances where people who donated later showed up in the agendas
-    - initial search via appointees list
-    - search for addresses referenced in city minutes
-- Look into applying for or suggesting one of our mutual aid friends apply for a board position
-    - Community Development Commission ***fund community programs babyyyy***
-        resendez
-    - Citizen Homelessness Commission (CHC)  ***literally anybody in our spaces***
-        resendez
-        blewett
-    - Community Police Oversight Board ***ideal for the folks with white privilege ***
-    - Dallas Area Partnership To End And Prevent Homelessness Local Government Corporation
-        fake ass corporation requires real estate, philanthropic, housing authority, and VA reps
-    - Environmental Commission ***underlooked position with possibility for major plays***
-        thomas
-        arnold
-        atkins
-        mcgough
-    - Ethics Advisory Commission ***interesting option***
-        no vacancies.
-        ***note that pam gerber donated a total of $3,350 to councilmembers and lives in park cities***
-    - Housing Finance Corporation *** many vacancies***
-        moreno
-        resendez
-        bazaldua
-    - Martin Luther King Jr Community Center Board *** direct area of impact concerning SWC work***
-        arnold
-        bazaldua
-        atkins
-Interesting Findings:
-Only 2/14 Councilmembers took out loans to fund their campaign. Many of their competitors DID take out loans.
-Mean > Median in all cases of campaign contributions for councilmembers
-Tennel Atkins had the fewest small-donation contributions
-7/14 Councilmembers had 25% of contributions being over $1000
-Jaynie Schultz and Chad West spent the most on their campaigns among elected councilmembers.
-
-B
+let's make sure the SPOUSE and SPOUSE is catching each as an alias.
+    - EX ALIAS DICT: {mark schlosser: [christie schlosser, christie and mark schlosser, mark schlosser]}
 
 """
 
@@ -55,20 +13,28 @@ B
 from prettytable import PrettyTable
 from statistics import mean, multimode, quantiles
 import pandas as pd
-import sys
-import numpy
+import sys, numpy, spacy
 
 numpy.set_printoptions(threshold=sys.maxsize)
-
+nlp = spacy.load("en_core_web_lg")
 pd.options.display.max_columns = None
 
-contributorsDoc = "Campaign_Finance (1).xlsx"
+contributorsDoc = "Campaign_Finance (2).xlsx"
 
 appointeeDoc = "Appointee to Council Donations (No Duplicates).xlsx"
+
+illegalDoc = open("IllegalActions.txt","w")
+
+suspiciousDoc = open("SuspiciousActions.txt", "w")
+
 appointeeDF = pd.read_excel(appointeeDoc, index_col=0)
+
+SEMANTIC_SIM_THRESHOLD = 0.73
 
 
 financeDF = pd.read_excel(contributorsDoc)
+
+mayor = 'Eric Johnson'
 
 councilMembers = ['Eric Johnson', 'Chad West', "Jesus Moreno", "Casey Thomas", "Carolyn KIng Arnold", "Carolyn Arnold", "carolyn arnold", "Jaime Resendez", "Omar Narvaez", "Adam Bazaldua", "Tennell Atkins", "Paula Blackmon", "Byron McGough", "Jaynie Schultz", "Cara Mendelsohn", "Gay Willis", "Paul Ridley"]
 
@@ -86,14 +52,14 @@ tempDF = pd.read_excel(contributorsDoc)
 zipsDF = tempDF.loc[(tempDF['Contact Type'] == "Contributor")]
 
 allzipcodes = zipsDF.Zipcode.unique().tolist()
-uniquerZips = []
+uniquerZips = set()
 # clean the zipcodes - remove all -xxxx suffixes
 for zip in allzipcodes:
     if isinstance(zip, str):
         allzipcodes.remove(zip)
-        uniquerZips.append(float(zip.split("-")[0]))
+        uniquerZips.add(float(zip.split("-")[0]))
     else:
-        uniquerZips.append(zip)
+        uniquerZips.add(zip)
 
 print("uniquer zips: ",len(uniquerZips))
 
@@ -103,106 +69,7 @@ outsideZips = list(filter(lambda i: i not in dallasZips, uniquerZips))
 
 # property map - https://maps.dcad.org/prd/dpm/
 
-"""
-suspicious properties
-https://montgomerystreetpartners.com/contact/ - 75219 donated to many campaigns
-3953 Maple ave
-lamont also owns
-https://opencorporates.com/companies/us_tx/0059618000
-https://www.fastpeoplesearch.com/max-lamont_id_G7459552138962769448
-
-
-doug deason
-https://twitter.com/dougdeason
-3953 Maple ave
-son of https://en.wikipedia.org/wiki/Darwin_Deason - billionare
-
-
-https://www.sos.state.tx.us/corp/managementinfofaqs.shtml#mgmt7
-SoS doesn't keep track of LLC ownership
-https://www.ethics.state.tx.us/resources/FAQs/2020election_faqs.php#Q11
-says LLC with corp owner can't make contributions
-
-
-https://opencorporates.com/companies/us_tx/0800936298
-LPC Retail LLC
-PO Box 1920 - Donations made by the POUGE family
-Dallas, TX 75221 8000.0 4 2
-owned by a corporation: C T Corporation System
-https://opencorporates.com/companies/us_tx/0001410606
-this is apparently not allowed by state ethics commission
-CT Corporation Systems has a president named john weber - whose wife angela and he have donated A LOT of money in this campaign
-delores pouge - https://www.spokeo.com/Jean-Pogue/Texas/Dallas/p269654771
-mack pouge - former partner of trammel crow
-
-these are the families that run dallas.^
-
-for po box 117540
-owned by james tatum
-gandolf15**@aol.com
-might have affiliations with amy jean espaza - https://www.truepeoplesearch.com/find/person/p9lr9nr2n4rn02l9n9un
-according to https://www.locatepeople.org/james-tatum/
-james should have had this PO for 15+ years
-
-
-!!!!!!!look at harlan crow, son of trammel crow, whose company by his namesake is affiliated to Don WILLIAMS (8604 greenville ave)!!!!!
-
-po box 17428 affiliated with this company - https://opencorporates.com/companies/us_tx/0163725500
-robert haass
-richard c haass
-also affiliated with https://profiles.superlawyers.com/texas/austin/lawfirm/linebarger-goggan-blair-and-sampson-llp/fb9e6c94-ca36-4a63-aca0-ef39cbd911bd.html
-    -MADRID MCLAUGHLIN POST 10354 VETERANS OF FOREIGN WARS
-also affiliated with https://opencorporates.com/companies/us_tx/0030444001
-    -MADRID MCLAUGHLIN POST 10354 VETERANS OF FOREIGN WARS 
-
-po box 803447
-https://opencorporates.com/companies/us_tx?action=search_companies&branch=&commit=Go&controller=searches&inactive=false&mode=best_fields&nonprofit=&order=&q=PO+Box+803447&search_fields%5B%5D=name&search_fields%5B%5D=previous_names&search_fields%5B%5D=company_number&search_fields%5B%5D=other_company_numbers&search_fields%5B%5D=registered_address_in_full&utf8=%E2%9C%93
-
-half of the top contributing addresses come from Park Cities Zip Codes
-
-Looking closer than just zipcodes, we find that there are several addresses that not only donate in the highest bracket of campaign contributions, but also have several names associated.
-
-Analysis shows that ther can be multiple donations under the same last name, but that are offered under different first names. This alone wouldn't be cause for alarm, but amidst these we find additional layers of obscurity among the highest campaign contributions.
-
-Among PO Boxes, it's difficult to identify with any particular owner, but the amount donated sits well above the top 75% of contributions. Without the ability to identify which individual is associated with these contributions, we'll resort to analyzing the affiliated businesses.
-
-As we have done with the majority of addresses, we're looking at the owners of these properties to identify the individuals responsible for funding these campaigns.
-
-Further, since 10/20 of the top contributing addresses reside outside of Dallas City Council Districts, it's worth noting that the two candidates who received the highest amounts of out of state contributinons also received the greatest amount of out-of-district contributions
-
-Chad West and Jaynie Schultz received $99,123 and $82,030 respectively. In other words, 34% of Chad West's campaign and 30% of Jaynie Schultz' campaign contributions came from out-of-district donors.
-
-use quartiles to map how much in district vs out of district in each segment
-
-
-new questions:
-1. what percent of winning campaigns received donations from park cities
-2. are the total contributions getting calculated correctly 
-3. can we build a zipcode map by contributions
-4. can we get a list of the following:
-    - names of individuals/businesses making out-of-state donations (to who and how much)
-    - names of individuals/businesses makign out-of-district donations (to who and how much)
-    - names of individuals trying to hide their donations amounts
-        - using aliases - same address, same last name
-        - using the names of others in their household - same address, same last name
-
-BART BEVERS - Dallas Inspector General Office
-ext 6704880
-hiring qualifications
-- ex fraud investigator background
-- ex police investigator background
-
-Dallas Campaign Finance Contributions Code Violations
-0. $5,000 cap on contributions to mayoral races
-1. 15A-2 individuals and certain businesses may not make more than $1000 in donations to a single candidate
-2. 15A-5 Use of legal name
-3. donations from out-of-state commitees totalling more than $500 must report all donors who gave more than  $100 to the out-of-state committee in the last 12 months
-** (b)  This section does not apply to a contribution from an out-of-state political committee if the committee appointed a campaign treasurer under Chapter 252 before the contribution was made and is subject to the reporting requirements of Chapter 254.**
-
-"""
-
-contributionsByZip = dict.fromkeys(outsideZips, 0)
-
+contributionsByZip = dict.fromkeys(uniquerZips, 0)
 
 for zip in allzipcodes:
     zipContributions = sum(zipsDF.loc[zipsDF['Zipcode'] == zip].Amount.values.tolist())
@@ -215,6 +82,7 @@ for zip in allzipcodes:
     else:
         contributionsByZip[cleanedZip] = zipContributions
 
+
 topContributorsSum = 0
 
 print("top contributing zipcodes:")
@@ -224,17 +92,20 @@ for zip in sorted(contributionsByZip, key=contributionsByZip.get, reverse=True)[
 
 
 # verify total contributions from all zipcodes match total contributions in whole dataframe
-allZipContributions = sum(contributionsByZip.values())
+fullDF = pd.read_excel(contributorsDoc)
+fullDF = fullDF.loc[(fullDF['Contact Type'] == "Contributor")]
+allContributionsSum = round(sum(fullDF.Amount.values.tolist()),2)
+
 
 print("total num zips: ")
 print(len(uniquerZips))
 print("top 5 zipcodes contributed: ")
 print(round(topContributorsSum))
 print("% of all contributions: ")
-print(round(topContributorsSum/allZipContributions*100,2))
+print(round(topContributorsSum/allContributionsSum*100,2))
 
 print("total contributions made to any candidate")
-print(allZipContributions)
+print(allContributionsSum)
 
 parkCitiesContributions = 0
 for zip in parkCitiesZips:
@@ -245,7 +116,7 @@ print("contributions from zips in park cities (non-dallas): ")
 print(round(parkCitiesContributions,2))
 
 print("% of total contributions from park cities: ")
-print(round(parkCitiesContributions/allZipContributions*100,2))
+print(round(parkCitiesContributions/allContributionsSum*100,2))
 
 
 outsideContributions = 0
@@ -256,7 +127,10 @@ print("total outside contributions")
 print(round(outsideContributions,2))
 
 print("% of total contributions from outside zips")
-print(round(outsideContributions/allZipContributions*100,2))
+print(round(outsideContributions/allContributionsSum*100,2))
+
+
+
 
 
 
@@ -285,7 +159,7 @@ for zip in uniqueAddresses:
 topContributorsSum = 0
 
 print("top contributing addresses:")
-for zip in sorted(contributionsByAddy, key=contributionsByAddy.get, reverse=True)[:40]:
+for zip in sorted(contributionsByAddy, key=contributionsByAddy.get, reverse=True)[:5]:
     print("-----")
     topContributorsSum+=round(contributionsByAddy[zip],2)
     lastNamesAtAddy = set(zipsDF.loc[addressDF['Geo Location'] == zip]['Last Name'].values.tolist())
@@ -302,6 +176,114 @@ print(spread)
 
 
 print("--------end address analysis---------")
+
+
+# get a set of unique addresses - unique and set may be redundant, but just to be safe
+uniqueAddresses = set(financeDF["Street "].unique().tolist())
+
+def semanticNameCheck(name1, name2, threshold):
+    """
+    # checks for Christopher vs Chris - only if we need it
+    if (name1 in name2 or name2 in name1):
+        return true
+    """
+
+    name1_doc = nlp(name1)
+    name2_doc = nlp(name2)
+    sim = name1_doc.similarity(name2_doc)
+    if sim > threshold:
+        return True
+    return False
+
+
+
+"""
+what do we want?
+1. all contributions at an address where the last names match
+2. all contributions at an address where the first and last names match
+3. all contributions at an address to any council member mayor
+
+* we want this to work for semantic similarity
+"""
+
+
+# let's make sure the 'name' isn't already an alias
+def isKnownAlias(name, aliases):
+    for knownAliases in aliases.values():
+        if (name in knownAliases):
+            return True
+    return False
+
+aliases = {}
+household = {}
+for address in uniqueAddresses:
+    addyDF = financeDF[financeDF["Street "] == address]
+
+    # 3. all contributions at an address to any council member/mayor
+    uniqueCandidatesAtAddress = set(addyDF["Candidate Name"].unique().tolist())
+    contributionsToCandidatesAtAddress = dict.fromkeys(uniqueCandidatesAtAddress, 0)
+    for candidate in uniqueCandidatesAtAddress:
+        contributionsToCandidatesAtAddress[candidate] += round(sum(addyDF[addyDF["Candidate Name"] == candidate].Amount.values.tolist()),2)
+        #suspiciousDoc.write(address + " donated $" + contributionsToCandidatesAtAddress[candidate] + " to " + candidate)
+
+    # 2. all contributions at an address where the first and last names match
+    uniqueNamesAtAddress = set(addyDF['Upper Combined Names'].unique().tolist())
+    for name in uniqueNamesAtAddress:
+        if (name == " " or isKnownAlias(name, aliases) or "AND" in name or "&" in name):
+            continue
+        if ("III" in name or "II" in name or "1" in name or "2" in name):
+            lastName = name.split(" ")[-2]
+        else:
+            lastName = name.split(" ")[-1]
+
+        # semantic analysis
+        for checkName in uniqueNamesAtAddress:
+            if (name == checkName):
+                continue
+            splitName = checkName.split(" ")
+            if ("III" in checkName or "II" in checkName or "1" in checkName or "2" in checkName):
+                checkLastName = checkName.split(" ")[-2]
+            else:
+                checkLastName = checkName.split(" ")[-1]
+            if semanticNameCheck(lastName, checkLastName, SEMANTIC_SIM_THRESHOLD):
+                # now let's check the first names
+                firstName = name.split(" ")[0]
+                firstCheckName = checkName.split(" ")[0]
+                if semanticNameCheck(firstName, firstCheckName, SEMANTIC_SIM_THRESHOLD):
+                    # we have an alias
+                    existingAliases = set()
+                    if name in aliases.keys():
+                        existingAliases = aliases[name]
+                    else:
+                        existingAliases = {name}
+                    existingAliases.add(checkName)
+                    aliases[name] = existingAliases
+                else:
+                    if(not isKnownAlias(name, household)):
+                        existingHousehold = set()
+                        if name in household.keys():
+                            existingHousehold = household[name]
+                        else:
+                            existingHousehold = {name}
+                        existingHousehold.add(checkName)
+                        household[name] = existingHousehold
+print("****aliases***")
+for aliasKey in aliases.keys():
+    print("for " + aliasKey)
+    for alias in aliases[aliasKey]:
+        print(alias)
+
+print("****households***")
+for householdKey in household.keys():
+    print("shared household: " + householdKey)
+    for shared in household[householdKey]:
+        print(shared)
+    # 1. all contributions at an address where the last names match
+
+
+        #familyContributionsAtAddress[lastName] += sum(addyDF[addyDF['Last Name'] == lastName].Amount.values.tolist())
+        # write each family contribution at address to suspicious file
+
 
 
 # for each councilmember
@@ -355,6 +337,7 @@ for name in councilMembers:
 
     namesOutOfState = outOfStateDF[outOfStateDF['Amount'] > 500]['Combined Names'].values.tolist()
 
+
     print("out of state donations exceeding $500 for ", name)
     for donor in namesOutOfState:
         print(donor)
@@ -402,7 +385,7 @@ print(sleezebags)
 
 
 
-
+illegalDoc.close()
 
 # unique contributors from park cities
 
