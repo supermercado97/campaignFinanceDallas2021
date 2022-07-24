@@ -110,22 +110,18 @@ for primaryName in aliases.keys():
             sharedName = "".join(s for s in aliases[primaryName] if "AND" in s)
             if (not sharedName):
                 sharedName = "".join(s for s in aliases[primaryName] if "&" in s)
-            print("**********")
             illegalDoc.write("**********\n")
             for alias in aliasDonationsToCandidate.keys():
                 tempAlias = aliasDonationsToCandidate[alias]
 
                 if(candidate in tempAlias.keys()):
-                    print(alias + "\t\t\t\t" + "$" + str(tempAlias[candidate]) + "\t\t\t\t" + candidate)
                     illegalDoc.write(alias + "\t\t\t\t" + "$" + str(aliasDonationsToCandidate[alias][candidate]) + "\t\t\t\t" + candidate + "\n")
 
 
             # replace below with writeFunc that takes in a name
             if (sharedName):
-                print(sharedName + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]))
                 illegalDoc.write(sharedName + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]) + "\n")
             else:
-                print(primaryName + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]))
                 illegalDoc.write(primaryName + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(primaryNameContributions[candidate]) + "\n")
 
 
@@ -141,7 +137,6 @@ for name in uniqueNames:
         donorContributionsToCandidate = sum(donorDF[donorDF['Candidate Name'] == candidate].Amount.values.tolist())
         donationThreshold = maxDonation(candidate) if not isCouple(name) else 2*maxDonation(candidate)
         if donorContributionsToCandidate > donationThreshold:
-            print(name + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(donorContributionsToCandidate))
             illegalDoc.write(name + "\t\t\t\t" + " total contributions to " + "\t\t\t\t" + candidate + "\t\t\t\t" + " $" + str(donorContributionsToCandidate) + "\n")
 
 illegalDoc.close()
